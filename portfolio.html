@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sandeep Paul | UI Developer</title>
+    <style>
+     
+      @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Roboto";
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #007bff;
+        color: #f0f0f0;
+        line-height: 1.6;
+      }
+
+      a {
+        color: #dfe5ec;
+        text-decoration: none;
+        transition: 0.3s;
+      }
+
+      a:hover {
+        color: #dfe5ec;
+      }
+
+      .container {
+        width: 90%;
+        max-width: 960px;
+        margin: auto;
+        padding: 20px 0;
+      }
+
+      /* Header */
+      header {
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        padding: 15px 0;
+        text-align: center;
+        border-bottom: 2px solid #007bff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+        font-weight: 700;
+      }
+
+      nav {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+      }
+
+      nav a {
+        color: #a0b9ff;
+        padding: 6px 18px;
+        border-radius: 25px;
+        background: rgba(0, 123, 255, 0.18);
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: background-color 0.3s ease, color 0.3s ease,
+          transform 0.25s ease;
+        box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+      }
+
+      nav a:hover {
+        background: #007bff;
+        color: #fff;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.6);
+      }
+
+      /* Profile Section */
+      .about-section {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        flex-wrap: wrap;
+        background: rgba(255, 255, 255, 0.09);
+        padding: 30px;
+        border-radius: 20px;
+        margin-top: 30px;
+        box-shadow: 0px 1px 8px 1px rgba(0, 0, 0, 0.1);
+      }
+
+      .about-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 25px;
+        flex-wrap: wrap;
+      }
+
+      .profile-img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #aab1ce;
+        box-shadow: 0 0 12px rgba(0, 123, 255, 0.3);
+      }
+
+      h2 {
+        font-size: 26px;
+        margin-bottom: 10px;
+        color: #c1d2d3;
+      }
+
+      section {
+        padding: 30px 0;
+      }
+
+      /* Project Cards */
+      .project-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 25px;
+        margin-top: 20px;
+        border-left: 5px solid #007bff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        transition: all 0.3s;
+      }
+
+      .project-card:hover {
+        background: black;
+        transform: translateY(-5px);
+        border-left-color: #00bfff;
+      }
+
+      /* Contact */
+      #contact p {
+        margin: 8px 0;
+      }
+
+      /* Footer */
+      footer {
+        background: rgba(0, 0, 0, 0.8);
+        color: #999;
+        text-align: center;
+        padding: 20px 0;
+        border-top: 1px solid #333;
+        margin-top: 40px;
+      }
+
+      /* Responsive */
+      @media (max-width: 600px) {
+        .about-section {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .about-content {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>Sandeep Paul</h1>
+        <nav>
+          <a href="#about">About</a>
+          <a href="#projects">Projects</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </div>
+    </header>
+
+    <section id="about" class="container about-section">
+      <div class="about-content">
+        <img src="https://github.com/SandeepPaul78/Portfolio/blob/main/Photo.JPG?raw=true" alt="Sandeep Paul" class="profile-img" />
+        <div>
+          <h2>About Me</h2>
+          <p>
+            I am a UI Developer at Ferns & Petals, working on live international
+            e-commerce projects. I specialize in creating responsive,
+            mobile-friendly UI using HTML, CSS, and JavaScript.
+            <br /><br />
+            I focus on performance, layout consistency, and delivering
+            high-quality frontend code for gifting-based platforms.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="container">
+      <h2>Projects</h2>
+
+      <div class="project-card">
+        <h3>Ferns & Petals - International Microsites</h3>
+        <p>
+          Developed and updated UI for global gifting websites (USA, UK, UAE,
+          etc.) including homepage sections like banners, best sellers, and
+          occasion strips. Handled mobile-first layouts, image optimization, and
+          modular CSS for fast loading and easy maintenance.
+        </p>
+      </div>
+
+      <div class="project-card">
+        <h3>Mobile UI Development – Gifting Categories</h3>
+        <p>
+          Built reusable UI sections for categories like Cakes, Flowers, and
+          Gifts using HTML/CSS. Used Flexbox and Grid to ensure responsive
+          design across devices.
+        </p>
+      </div>
+    </section>
+
+    <section id="contact" class="container">
+      <h2>Contact</h2>
+      <p>
+        Email:
+        <a href="mailto:sandeep.paul@example.com">sandeep.paul@example.com</a>
+      </p>
+      <p>
+        GitHub:
+        <a href="https://github.com/sandeeppaul" target="_blank"
+          >github.com/sandeeppaul</a
+        >
+      </p>
+    </section>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 Sandeep Paul</p>
+      </div>
+    </footer>
+  </body>
+</html>

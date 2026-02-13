@@ -1,0 +1,6 @@
+Replace this file with your actual resume PDF.
+Current link used in app: /resume.pdf
+
+How to update:
+1. Put your actual resume file in client/public/
+2. Name it: resume.pdf

@@ -209,6 +209,7 @@ function App() {
               <p>{portfolio.about}</p>
               <ul>
                 <li>
+                  
                   <FaLaptopCode /> Currently working at <strong>{portfolio.company}</strong> as{' '}
                   <strong>{portfolio.role}</strong>
                 </li>

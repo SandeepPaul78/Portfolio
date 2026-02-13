@@ -1,66 +1,54 @@
-# Sandeep Pal Portfolio (Full Stack)
+# Sandeep Pal Portfolio (Frontend Only)
 
-Modern full-stack portfolio project built with React + Express.
+Modern portfolio project built with React + Vite.
 
 ## Stack
-- Frontend: React, Vite, Framer Motion, Axios, React Icons
-- Backend: Node.js, Express.js
-- Data source: API-driven JSON content
-- Contact form: Backend endpoint with server-side message storage
+- Frontend: React, Vite, Framer Motion, React Icons
+- Data source: Static data inside frontend
+- Contact form: `mailto` (opens visitor's default mail app)
 
 ## Features
 - Premium one-page responsive portfolio UI
 - Animated hero + timeline + skill sections
-- API-based portfolio details and projects
+- Static portfolio details and projects in React
 - Live projects section with your links
-- Working contact form (`POST /api/contact`)
+- Working contact form using `mailto`
 - Mobile-friendly layout and sticky navigation
+- No backend setup required
 
 ## Project Structure
 
 ```bash
 PortfolioProject/
   client/
-  server/
 ```
 
 ## Setup
 
-1. Install root dependencies:
+1. Go to frontend folder:
+```bash
+cd client
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Create env files:
-```bash
-cp server/.env.example server/.env
-cp client/.env.example client/.env
-```
-
-3. Run both frontend + backend:
+3. Run frontend:
 ```bash
 npm run dev
 ```
 
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:5000`
 
 ## Update Your Data
 
 All personal details and projects are managed from:
-- `server/src/data/portfolioData.js`
-
-Contact messages are stored at:
-- `server/data/messages.json`
-
-## API Endpoints
-- `GET /api/health`
-- `GET /api/portfolio`
-- `GET /api/projects`
-- `POST /api/contact`
+- `client/src/App.jsx`
 
 ## Build Frontend
 ```bash
+cd client
 npm run build
 ```
-

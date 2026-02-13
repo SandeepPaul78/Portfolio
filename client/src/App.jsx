@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FaFileArrowDown,
@@ -11,9 +10,119 @@ import {
   FaUserGraduate
 } from 'react-icons/fa6';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const CONTACT_EMAIL = 'sandeeppaul8787@gmail.com';
 const RESUME_FILE = '/resume.pdf';
 const PROFILE_IMAGE = '/assets/profile-sandeep.jpeg';
+
+const portfolio = {
+  name: 'Sandeep Pal',
+  role: 'UI Developer / Frontend Developer',
+  company: 'FNP',
+  dob: '2001-01-31',
+  tagline:
+    'Frontend-focused developer crafting responsive, conversion-oriented web interfaces with clean user experience.',
+  about:
+    'I build practical and polished web interfaces with React, JavaScript, and modern CSS. I focus on fast loading pages, clean layout systems, and clear user flows for real products.',
+  github: 'https://github.com/sandeeppaul78',
+  location: {
+    permanent: 'Village Pacca Khera, District Karnal - 132036, Haryana',
+    temporary: 'Sultanpur, New Delhi'
+  },
+  education: [
+    {
+      title: 'Full Stack Development Certificate',
+      institute: 'Tech Stack Institute, Saket, New Delhi',
+      duration: 'Feb 2025 - Feb 2026',
+      score: 'Completed intensive 1-year program'
+    },
+    {
+      title: 'B.Sc (Bachelor Degree)',
+      institute: 'GJU, Hisar',
+      duration: 'Graduated 2021',
+      score: '86%'
+    },
+    {
+      title: 'Class 12th',
+      institute: 'Senior Secondary',
+      duration: 'Batch 2018',
+      score: ''
+    }
+  ],
+  experience: [
+    {
+      title: 'UI Developer / Frontend Developer',
+      company: 'FNP',
+      duration: 'Feb 2025 - Present',
+      highlights: [
+        'Developing responsive landing pages and UI modules for campaigns and catalog experiences.',
+        'Collaborating with design and business teams for faster delivery and better user engagement.',
+        'Working with reusable components, JSON-driven sections, and conversion-focused UI updates.'
+      ]
+    },
+    {
+      title: 'Operations Executive',
+      company: 'Study Consultant Field',
+      duration: 'Approx. 1.6 years',
+      highlights: [
+        'Handled daily operations and support workflows with process discipline.',
+        'Improved communication turnaround and documentation quality.'
+      ]
+    }
+  ],
+  skills: {
+    frontend: ['React', 'JavaScript', 'HTML5', 'CSS3', 'Responsive Design', 'UI Animation'],
+    backend: ['Node.js', 'Express.js', 'REST APIs'],
+    database: ['MongoDB'],
+    tools: ['Git', 'GitHub', 'Vite', 'Postman', 'VS Code']
+  }
+};
+
+const projects = [
+  {
+    id: 'project-1',
+    title: 'FriendsTalk Web',
+    category: 'Realtime Chat App',
+    link: 'https://friendstalkweb.pages.dev',
+    description:
+      'WhatsApp-inspired web chat interface focused on clean messaging flow, contact list handling, and practical real-time style UX.',
+    stack: ['React', 'Frontend UI', 'Web App']
+  },
+  {
+    id: 'project-2',
+    title: 'Music Player Clone',
+    category: 'Frontend Project',
+    link: 'https://music-player-1-p6eq.onrender.com',
+    description:
+      'Spotify-style music player clone with playlist layout, controls, and responsive media UI implementation.',
+    stack: ['HTML', 'CSS', 'JavaScript', 'UI Clone']
+  },
+  {
+    id: 'project-3',
+    title: 'Expense Tracker',
+    category: 'Full Stack Project',
+    link: 'https://expense-tracker-api-9khz.onrender.com',
+    description:
+      'Expense tracking system with frontend + backend integration for managing records and financial entries.',
+    stack: ['React', 'Node.js', 'Express.js', 'MongoDB']
+  },
+  {
+    id: 'project-4',
+    title: 'Naam Jaap Counter',
+    category: 'Practice Project',
+    link: 'https://sandeeppaul78.github.io/naam-jaap-counter/',
+    description: 'Early learning project built as a focused counter app for naam jaap tracking.',
+    stack: ['JavaScript', 'DOM']
+  },
+  {
+    id: 'project-5',
+    title: 'Student Management System',
+    category: 'Practice Project',
+    link: 'https://sandeeppaul78.github.io/Student-Management-System/',
+    description:
+      'JavaScript-based student data management practice app for CRUD-style operations and table handling.',
+    stack: ['JavaScript', 'HTML', 'CSS']
+  }
+];
 
 const navItems = [
   { label: 'About', target: '#about' },
@@ -44,11 +153,6 @@ const getAge = (dob) => {
 };
 
 function App() {
-  const [portfolio, setPortfolio] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -60,61 +164,49 @@ function App() {
     type: ''
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [portfolioResponse, projectsResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/portfolio`),
-          axios.get(`${API_BASE_URL}/projects`)
-        ]);
-
-        setPortfolio(portfolioResponse.data.data);
-        setProjects(projectsResponse.data.data);
-      } catch (fetchError) {
-        setError('Could not load portfolio data. Please start backend server.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const totalProjects = useMemo(() => projects.length, [projects]);
+  const totalProjects = projects.length;
 
   const handleContactChange = (event) => {
     const { name, value } = event.target;
     setContactForm((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleContactSubmit = async (event) => {
+  const handleContactSubmit = (event) => {
     event.preventDefault();
     setContactStatus({ sending: true, message: '', type: '' });
 
-    try {
-      const { data } = await axios.post(`${API_BASE_URL}/contact`, contactForm);
+    const trimmedName = contactForm.name.trim();
+    const trimmedEmail = contactForm.email.trim();
+    const trimmedMessage = contactForm.message.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
       setContactStatus({
         sending: false,
-        message: data.message,
-        type: 'success'
-      });
-      setContactForm({ name: '', email: '', message: '' });
-    } catch (submitError) {
-      setContactStatus({
-        sending: false,
-        message: submitError.response?.data?.message || 'Unable to send message. Try again.',
+        message: 'Please fill all fields before sending.',
         type: 'error'
       });
+      return;
     }
+
+    const subject = `Portfolio Contact from ${trimmedName}`;
+    const body = [
+      `Name: ${trimmedName}`,
+      `Email: ${trimmedEmail}`,
+      '',
+      'Message:',
+      trimmedMessage
+    ].join('\n');
+
+    const mailtoUrl = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+
+    setContactStatus({
+      sending: false,
+      message: `Mail app opened. If it did not open, email directly at ${CONTACT_EMAIL}.`,
+      type: 'success'
+    });
+    setContactForm({ name: '', email: '', message: '' });
   };
-
-  if (loading) {
-    return <div className="loading-screen">Preparing portfolio...</div>;
-  }
-
-  if (error || !portfolio) {
-    return <div className="loading-screen error">{error || 'Portfolio data unavailable.'}</div>;
-  }
 
   return (
     <div className="app-shell">
@@ -213,9 +305,11 @@ function App() {
                   <strong>{portfolio.role}</strong>
                 </li>
                 <li>
-                  <FaLocationDot /> Address: {portfolio.location.Address}
+                  <FaLocationDot /> Permanent: {portfolio.location.permanent}
                 </li>
-               
+                <li>
+                  <FaLocationDot /> Temporary: {portfolio.location.temporary}
+                </li>
               </ul>
             </motion.article>
 
@@ -324,6 +418,9 @@ function App() {
                 I am currently working as a UI Developer and available for impactful frontend opportunities,
                 freelance work, and product collaboration.
               </p>
+              <p className="direct-mail">
+                Direct email: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+              </p>
               <a className="btn-primary" href={portfolio.github} target="_blank" rel="noreferrer">
                 <FaGithub /> Explore GitHub
               </a>
@@ -363,7 +460,7 @@ function App() {
               />
 
               <button type="submit" className="btn-primary" disabled={contactStatus.sending}>
-                {contactStatus.sending ? 'Sending...' : 'Send Message'}
+                {contactStatus.sending ? 'Opening Mail App...' : 'Send Message'}
               </button>
 
               {contactStatus.message ? (
@@ -376,7 +473,9 @@ function App() {
 
       <footer className="footer">
         <div className="container footer-inner">
-          <p>© {new Date().getFullYear()} {portfolio.name}. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} {portfolio.name}. All rights reserved.
+          </p>
           <a href={portfolio.github} target="_blank" rel="noreferrer">
             <FaGithub /> github.com/sandeeppaul78
           </a>

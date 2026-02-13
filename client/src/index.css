@@ -456,6 +456,16 @@ a {
   color: var(--text-soft);
 }
 
+.direct-mail {
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+.direct-mail a {
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
 .contact-form {
   display: flex;
   flex-direction: column;
@@ -488,6 +498,14 @@ a {
 
 .form-message.error {
   color: #bf283d;
+}
+
+.hp-wrap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .footer {

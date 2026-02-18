@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
+  FaEnvelope,
   FaFileArrowDown,
   FaGithub,
-  FaLink,
   FaLaptopCode,
+  FaLink,
   FaLocationDot,
   FaRegCalendar,
-  FaUserGraduate
+  FaUserGraduate,
+  FaXmark
 } from 'react-icons/fa6';
 
 const CONTACT_EMAIL = 'sandeeppaul8787@gmail.com';
@@ -125,17 +127,34 @@ const projects = [
 ];
 
 const navItems = [
-  { label: 'About', target: '#about' },
-  { label: 'Experience', target: '#experience' },
-  { label: 'Skills', target: '#skills' },
-  { label: 'Projects', target: '#projects' },
-  { label: 'Contact', target: '#contact' }
+  { label: 'Home', target: '#home', meta: 'Intro & highlights' },
+  { label: 'About', target: '#about', meta: 'Profile & education' },
+  { label: 'Experience', target: '#experience', meta: 'Professional journey' },
+  { label: 'Skills', target: '#skills', meta: 'Core stack' },
+  { label: 'Projects', target: '#projects', meta: 'Live work samples' },
+  { label: 'Contact', target: '#contact', meta: 'Direct reach out' }
 ];
 
+const heroFocusWords = [
+  'UI Engineering',
+  'Frontend Systems',
+  'Motion-driven Interfaces',
+  'Performance-first UX'
+];
+
+const themeLabelMap = {
+  home: 'Hero',
+  about: 'About',
+  experience: 'Experience',
+  skills: 'Skills',
+  projects: 'Projects',
+  contact: 'Contact'
+};
+
 const fadeInUp = {
-  initial: { opacity: 0, y: 26 },
+  initial: { opacity: 0, y: 28 },
   whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
+  transition: { duration: 0.55, ease: 'easeOut' },
   viewport: { once: true, amount: 0.2 }
 };
 
@@ -163,8 +182,138 @@ function App() {
     message: '',
     type: ''
   });
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeTheme, setActiveTheme] = useState('home');
+  const [cursorEnabled, setCursorEnabled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [focusWordIndex, setFocusWordIndex] = useState(0);
 
-  const totalProjects = projects.length;
+  const cursorDotRef = useRef(null);
+  const cursorRingRef = useRef(null);
+
+  const totalProjects = useMemo(() => projects.length, []);
+
+  useEffect(() => {
+    const sections = Array.from(document.querySelectorAll('section[data-theme]'));
+    if (!sections.length) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveTheme(entry.target.dataset.theme || 'home');
+          }
+        });
+      },
+      { threshold: 0.45, rootMargin: '-18% 0px -35% 0px' }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, []);
+
+  useEffect(() => {
+    const setProgress = () => {
+      const scrolled = window.scrollY;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const value = scrollHeight > 0 ? Math.min(scrolled / scrollHeight, 1) : 0;
+      setScrollProgress(value);
+    };
+
+    setProgress();
+    window.addEventListener('scroll', setProgress, { passive: true });
+    window.addEventListener('resize', setProgress);
+
+    return () => {
+      window.removeEventListener('scroll', setProgress);
+      window.removeEventListener('resize', setProgress);
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setFocusWordIndex((previous) => (previous + 1) % heroFocusWords.length);
+    }, 2200);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    const dot = cursorDotRef.current;
+    const ring = cursorRingRef.current;
+
+    if (!finePointer || !dot || !ring) return undefined;
+
+    setCursorEnabled(true);
+    document.body.classList.add('cursor-enhanced');
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let ringX = mouseX;
+    let ringY = mouseY;
+    let frameId;
+
+    const moveCursor = (event) => {
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+      dot.style.transform = `translate3d(${mouseX - 4}px, ${mouseY - 4}px, 0)`;
+    };
+
+    const animateRing = () => {
+      ringX += (mouseX - ringX) * 0.18;
+      ringY += (mouseY - ringY) * 0.18;
+      ring.style.transform = `translate3d(${ringX - 18}px, ${ringY - 18}px, 0)`;
+      frameId = window.requestAnimationFrame(animateRing);
+    };
+
+    const setCursorState = (isActive) => {
+      dot.classList.toggle('active', isActive);
+      ring.classList.toggle('active', isActive);
+    };
+
+    const handleOver = (event) => {
+      const interactive = event.target.closest(
+        'a, button, input, textarea, .hamburger-btn, .mobile-link, .mobile-close-btn'
+      );
+      setCursorState(Boolean(interactive));
+    };
+
+    const handleDown = () => setCursorState(true);
+    const handleUp = () => setCursorState(false);
+
+    window.addEventListener('mousemove', moveCursor);
+    window.addEventListener('mousedown', handleDown);
+    window.addEventListener('mouseup', handleUp);
+    document.addEventListener('mouseover', handleOver);
+    frameId = window.requestAnimationFrame(animateRing);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('mousemove', moveCursor);
+      window.removeEventListener('mousedown', handleDown);
+      window.removeEventListener('mouseup', handleUp);
+      document.removeEventListener('mouseover', handleOver);
+      document.body.classList.remove('cursor-enhanced');
+    };
+  }, []);
 
   const handleContactChange = (event) => {
     const { name, value } = event.target;
@@ -189,13 +338,9 @@ function App() {
     }
 
     const subject = `Portfolio Contact from ${trimmedName}`;
-    const body = [
-      `Name: ${trimmedName}`,
-      `Email: ${trimmedEmail}`,
-      '',
-      'Message:',
-      trimmedMessage
-    ].join('\n');
+    const body = [`Name: ${trimmedName}`, `Email: ${trimmedEmail}`, '', 'Message:', trimmedMessage].join(
+      '\n'
+    );
 
     const mailtoUrl = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoUrl;
@@ -208,50 +353,190 @@ function App() {
     setContactForm({ name: '', email: '', message: '' });
   };
 
+  const isActiveNav = (target) => activeTheme === target.replace('#', '');
+
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-theme={activeTheme}>
+      <div className="scroll-progress-wrap" aria-hidden="true">
+        <motion.span className="scroll-progress" style={{ scaleX: scrollProgress }} />
+      </div>
+
+      <div
+        ref={cursorRingRef}
+        className={`cursor-ring ${cursorEnabled ? 'visible' : ''}`}
+        aria-hidden="true"
+      />
+      <div
+        ref={cursorDotRef}
+        className={`cursor-dot ${cursorEnabled ? 'visible' : ''}`}
+        aria-hidden="true"
+      />
+
       <header className="topbar">
+        <div className="topbar-glow" aria-hidden="true" />
         <div className="container topbar-inner">
-          <a href="#home" className="brand-mark">
+          <a href="#home" className="brand-mark" onClick={() => setIsMenuOpen(false)}>
             <img src="/sandeep-logo.svg" alt="SP logo" />
             <span>{portfolio.name}</span>
           </a>
-          <nav className="nav-menu">
-            {navItems.map((item) => (
-              <a key={item.label} href={item.target}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          <a className="github-btn" href={portfolio.github} target="_blank" rel="noreferrer">
-            <FaGithub /> GitHub
-          </a>
+
+          <div className="top-actions">
+            <span className="theme-pill">Now viewing: {themeLabelMap[activeTheme]}</span>
+
+            <a className="github-btn" href={portfolio.github} target="_blank" rel="noreferrer">
+              <FaGithub /> GitHub
+            </a>
+
+            <button
+              type="button"
+              className={`hamburger-btn ${isMenuOpen ? 'open' : ''}`}
+              onClick={() => setIsMenuOpen((previous) => !previous)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMenuOpen}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
         </div>
       </header>
 
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            className="mobile-menu-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <motion.aside
+              className="mobile-menu-panel"
+              initial={{ opacity: 0, clipPath: 'circle(2% at 95% 5%)' }}
+              animate={{ opacity: 1, clipPath: 'circle(150% at 95% 5%)' }}
+              exit={{ opacity: 0, clipPath: 'circle(2% at 95% 5%)' }}
+              transition={{ duration: 0.45, ease: 'easeInOut' }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mobile-menu-header">
+                <div>
+                  <p className="menu-kicker">Menu</p>
+                  <h3>Navigate Portfolio</h3>
+                </div>
+                <button
+                  type="button"
+                  className="mobile-close-btn"
+                  onClick={() => setIsMenuOpen(false)}
+                  aria-label="Close menu"
+                >
+                  <FaXmark />
+                </button>
+              </div>
+
+              <div className="mobile-menu-links">
+                {navItems.map((item, index) => (
+                  <motion.a
+                    key={item.label}
+                    href={item.target}
+                    className={`mobile-link ${isActiveNav(item.target) ? 'active' : ''}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.06 * (index + 1), duration: 0.28 }}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="mobile-link-content">
+                      <span>{item.label}</span>
+                      <small>{item.meta}</small>
+                    </div>
+                    <b className="mobile-link-arrow">{String(index + 1).padStart(2, '0')}</b>
+                  </motion.a>
+                ))}
+              </div>
+
+              <div className="mobile-actions">
+                <a className="btn-primary" href={portfolio.github} target="_blank" rel="noreferrer">
+                  <FaGithub /> Explore GitHub
+                </a>
+                <a className="btn-ghost" href={RESUME_FILE} download="Sandeep-Pal-Resume.pdf">
+                  <FaFileArrowDown /> Download Resume
+                </a>
+                <a className="btn-ghost" href={`mailto:${CONTACT_EMAIL}`}>
+                  <FaEnvelope /> Send Mail
+                </a>
+              </div>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main>
-        <section id="home" className="hero-section">
+        <section id="home" className="hero-section themed-section theme-home" data-theme="home">
           <div className="orb orb-one" />
           <div className="orb orb-two" />
+
           <div className="container hero-grid">
             <motion.div {...fadeInUp} className="hero-content">
               <p className="eyebrow">UI Developer Portfolio</p>
-              <h1>
-                {portfolio.name}
-                <span>{portfolio.role}</span>
+
+              <h1 className="hero-title">
+                <span className="name-loop-wrap" aria-label={portfolio.name}>
+                  <span className="name-loop-track">
+                    {portfolio.name} • {portfolio.name} • {portfolio.name} • {portfolio.name} •
+                  </span>
+                </span>
+                <span className="hero-role">
+                  Crafting{' '}
+                  <span className="hero-role-word-wrap" aria-live="polite">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={heroFocusWords[focusWordIndex]}
+                        className="hero-role-word"
+                        initial={{ y: 18, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -16, opacity: 0 }}
+                        transition={{ duration: 0.32, ease: 'easeOut' }}
+                      >
+                        {heroFocusWords[focusWordIndex]}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                </span>
               </h1>
+
               <p className="hero-copy">{portfolio.tagline}</p>
+
               <div className="hero-cta">
-                <a href="#projects" className="btn-primary">
+                <motion.a
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.97 }}
+                  href="#projects"
+                  className="btn-primary"
+                >
                   View Projects
-                </a>
-                <a href="#contact" className="btn-ghost">
+                </motion.a>
+
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  href="#contact"
+                  className="btn-ghost"
+                >
                   Hire Me
-                </a>
-                <a className="btn-ghost btn-download" href={RESUME_FILE} download="Sandeep-Pal-Resume.pdf">
+                </motion.a>
+
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn-ghost btn-download"
+                  href={RESUME_FILE}
+                  download="Sandeep-Pal-Resume.pdf"
+                >
                   <FaFileArrowDown /> Download Resume
-                </a>
+                </motion.a>
               </div>
+
               <div className="chip-row">
                 <span>
                   <FaRegCalendar /> DOB: 31 Jan 2001
@@ -289,184 +574,210 @@ function App() {
           </div>
         </section>
 
-        <section id="about" className="section-block container">
-          <motion.div {...fadeInUp} className="section-head">
-            <p className="section-label">About</p>
-            <h2>Developer profile at a glance</h2>
-          </motion.div>
+        <section id="about" className="section-block themed-section theme-about" data-theme="about">
+          <div className="container">
+            <motion.div {...fadeInUp} className="section-head">
+              <p className="section-label">About</p>
+              <h2>Developer profile at a glance</h2>
+            </motion.div>
 
-          <div className="about-layout">
-            <motion.article {...fadeInUp} className="card">
-              <h3>Who I am</h3>
-              <p>{portfolio.about}</p>
-              <ul>
-                <li>
-                  <FaLaptopCode /> Currently working at <strong>{portfolio.company}</strong> as{' '}
-                  <strong>{portfolio.role}</strong>
-                </li>
-                <li>
-                  <FaLocationDot /> Permanent: {portfolio.location.permanent}
-                </li>
-                <li>
-                  <FaLocationDot /> Temporary: {portfolio.location.temporary}
-                </li>
-              </ul>
-            </motion.article>
-
-            <motion.article {...fadeInUp} className="card">
-              <h3>Education</h3>
-              <div className="timeline compact">
-                {portfolio.education.map((item) => (
-                  <div className="timeline-item" key={item.title}>
-                    <p className="meta-line">
-                      <FaUserGraduate /> {item.duration}
-                    </p>
-                    <h4>{item.title}</h4>
-                    <p>{item.institute}</p>
-                    {item.score ? <small>{item.score}</small> : null}
-                  </div>
-                ))}
-              </div>
-            </motion.article>
-          </div>
-        </section>
-
-        <section id="experience" className="section-block container">
-          <motion.div {...fadeInUp} className="section-head">
-            <p className="section-label">Experience</p>
-            <h2>Professional journey</h2>
-          </motion.div>
-
-          <div className="timeline">
-            {portfolio.experience.map((item) => (
-              <motion.article {...fadeInUp} className="timeline-item card" key={`${item.title}-${item.company}`}>
-                <p className="meta-line">{item.duration}</p>
-                <h3>{item.title}</h3>
-                <h4>{item.company}</h4>
+            <div className="about-layout">
+              <motion.article {...fadeInUp} className="card">
+                <h3>Who I am</h3>
+                <p>{portfolio.about}</p>
                 <ul>
-                  {item.highlights.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
+                  <li>
+                    <FaLaptopCode /> Currently working at <strong>{portfolio.company}</strong> as{' '}
+                    <strong>{portfolio.role}</strong>
+                  </li>
+                  <li>
+                    <FaLocationDot /> Permanent: {portfolio.location.permanent}
+                  </li>
+                  <li>
+                    <FaLocationDot /> Temporary: {portfolio.location.temporary}
+                  </li>
                 </ul>
               </motion.article>
-            ))}
-          </div>
-        </section>
 
-        <section id="skills" className="section-block container">
-          <motion.div {...fadeInUp} className="section-head">
-            <p className="section-label">Skills</p>
-            <h2>Tools and technologies</h2>
-          </motion.div>
-
-          <div className="skills-layout">
-            {Object.entries(portfolio.skills).map(([category, values]) => (
-              <motion.article {...fadeInUp} className="skill-card card" key={category}>
-                <h3>{category}</h3>
-                <div className="skill-tags">
-                  {values.map((skill) => (
-                    <span key={skill}>{skill}</span>
+              <motion.article {...fadeInUp} className="card">
+                <h3>Education</h3>
+                <div className="timeline compact">
+                  {portfolio.education.map((item) => (
+                    <div className="timeline-item" key={item.title}>
+                      <p className="meta-line">
+                        <FaUserGraduate /> {item.duration}
+                      </p>
+                      <h4>{item.title}</h4>
+                      <p>{item.institute}</p>
+                      {item.score ? <small>{item.score}</small> : null}
+                    </div>
                   ))}
                 </div>
               </motion.article>
-            ))}
+            </div>
           </div>
         </section>
 
-        <section id="projects" className="section-block container">
-          <motion.div {...fadeInUp} className="section-head">
-            <p className="section-label">Projects</p>
-            <h2>Work samples and practice builds</h2>
-          </motion.div>
+        <section
+          id="experience"
+          className="section-block themed-section theme-experience"
+          data-theme="experience"
+        >
+          <div className="container">
+            <motion.div {...fadeInUp} className="section-head">
+              <p className="section-label">Experience</p>
+              <h2>Professional journey</h2>
+            </motion.div>
 
-          <div className="projects-grid">
-            {projects.map((project, index) => (
-              <motion.article
-                {...fadeInUp}
-                transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.2) }}
-                className="project-card card"
-                key={project.id}
-              >
-                <div className="project-topline">
-                  <p>{project.category}</p>
-                  <a href={project.link} target="_blank" rel="noreferrer">
-                    <FaLink /> Live
-                  </a>
-                </div>
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <div className="stack-tags">
-                  {project.stack.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
+            <div className="timeline">
+              {portfolio.experience.map((item) => (
+                <motion.article {...fadeInUp} className="timeline-item card" key={`${item.title}-${item.company}`}>
+                  <p className="meta-line">{item.duration}</p>
+                  <h3>{item.title}</h3>
+                  <h4>{item.company}</h4>
+                  <ul>
+                    {item.highlights.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="skills" className="section-block themed-section theme-skills" data-theme="skills">
+          <div className="container">
+            <motion.div {...fadeInUp} className="section-head">
+              <p className="section-label">Skills</p>
+              <h2>Tools and technologies</h2>
+            </motion.div>
+
+            <div className="skills-layout">
+              {Object.entries(portfolio.skills).map(([category, values]) => (
+                <motion.article {...fadeInUp} className="skill-card card" key={category}>
+                  <h3>{category}</h3>
+                  <div className="skill-tags">
+                    {values.map((skill) => (
+                      <span key={skill}>{skill}</span>
+                    ))}
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="projects" className="section-block themed-section theme-projects" data-theme="projects">
+          <div className="container">
+            <motion.div {...fadeInUp} className="section-head">
+              <p className="section-label">Projects</p>
+              <h2>Work samples and practice builds</h2>
+            </motion.div>
+
+            <div className="projects-grid">
+              {projects.map((project, index) => (
+                <motion.article
+                  {...fadeInUp}
+                  transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.24) }}
+                  className="project-card card"
+                  key={project.id}
+                >
+                  <div className="project-topline">
+                    <p>{project.category}</p>
+                    <a href={project.link} target="_blank" rel="noreferrer">
+                      <FaLink /> Live
+                    </a>
+                  </div>
+                  <h3>{project.title}</h3>
+                  <p>{project.description}</p>
+                  <div className="stack-tags">
+                    {project.stack.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="section-block themed-section theme-contact" data-theme="contact">
+          <div className="container">
+            <motion.div {...fadeInUp} className="section-head">
+              <p className="section-label">Contact</p>
+              <h2>Let us build something strong together</h2>
+            </motion.div>
+
+            <div className="contact-layout">
+              <motion.article {...fadeInUp} className="card contact-info">
+                <h3>Open for UI / Frontend roles</h3>
+                <p>
+                  I am currently working as a UI Developer and available for impactful frontend opportunities,
+                  freelance work, and product collaboration.
+                </p>
+                <p className="direct-mail">
+                  Direct email: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+                </p>
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn-primary"
+                  href={portfolio.github}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FaGithub /> Explore GitHub
+                </motion.a>
               </motion.article>
-            ))}
-          </div>
-        </section>
 
-        <section id="contact" className="section-block container">
-          <motion.div {...fadeInUp} className="section-head">
-            <p className="section-label">Contact</p>
-            <h2>Let us build something strong together</h2>
-          </motion.div>
+              <motion.form {...fadeInUp} className="card contact-form" onSubmit={handleContactSubmit}>
+                <label htmlFor="name">Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  value={contactForm.name}
+                  onChange={handleContactChange}
+                  placeholder="Your name"
+                  required
+                />
 
-          <div className="contact-layout">
-            <motion.article {...fadeInUp} className="card contact-info">
-              <h3>Open for UI / Frontend roles</h3>
-              <p>
-                I am currently working as a UI Developer and available for impactful frontend opportunities,
-                freelance work, and product collaboration.
-              </p>
-              <p className="direct-mail">
-                Direct email: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-              </p>
-              <a className="btn-primary" href={portfolio.github} target="_blank" rel="noreferrer">
-                <FaGithub /> Explore GitHub
-              </a>
-            </motion.article>
+                <label htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={contactForm.email}
+                  onChange={handleContactChange}
+                  placeholder="you@example.com"
+                  required
+                />
 
-            <motion.form {...fadeInUp} className="card contact-form" onSubmit={handleContactSubmit}>
-              <label htmlFor="name">Name</label>
-              <input
-                id="name"
-                name="name"
-                value={contactForm.name}
-                onChange={handleContactChange}
-                placeholder="Your name"
-                required
-              />
+                <label htmlFor="message">Message</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  value={contactForm.message}
+                  onChange={handleContactChange}
+                  rows="5"
+                  placeholder="Write your requirement"
+                  required
+                />
 
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={contactForm.email}
-                onChange={handleContactChange}
-                placeholder="you@example.com"
-                required
-              />
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  className="btn-primary"
+                  disabled={contactStatus.sending}
+                >
+                  {contactStatus.sending ? 'Opening Mail App...' : 'Send Message'}
+                </motion.button>
 
-              <label htmlFor="message">Message</label>
-              <textarea
-                id="message"
-                name="message"
-                value={contactForm.message}
-                onChange={handleContactChange}
-                rows="5"
-                placeholder="Write your requirement"
-                required
-              />
-
-              <button type="submit" className="btn-primary" disabled={contactStatus.sending}>
-                {contactStatus.sending ? 'Opening Mail App...' : 'Send Message'}
-              </button>
-
-              {contactStatus.message ? (
-                <p className={`form-message ${contactStatus.type}`}>{contactStatus.message}</p>
-              ) : null}
-            </motion.form>
+                {contactStatus.message ? (
+                  <p className={`form-message ${contactStatus.type}`}>{contactStatus.message}</p>
+                ) : null}
+              </motion.form>
+            </div>
           </div>
         </section>
       </main>

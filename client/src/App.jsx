@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaFileArrowDown,
@@ -157,6 +157,80 @@ const fadeInUp = {
   viewport: { once: true, amount: 0.2 }
 };
 
+const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%*';
+
+const randomScramble = (text) =>
+  text
+    .split('')
+    .map((char) => {
+      if (char === ' ') return ' ';
+      return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+    })
+    .join('');
+
+const reverseString = (value) => value.split('').reverse().join('');
+
+const buildScrambleFrames = (text) => [randomScramble(text), randomScramble(text), reverseString(text), text];
+
+const ScrambleText = ({ text }) => {
+  const [displayText, setDisplayText] = useState(text);
+  const [isScrambling, setIsScrambling] = useState(false);
+  const textRef = useRef(null);
+  const timersRef = useRef([]);
+
+  const clearTimers = () => {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current = [];
+  };
+
+  const playScramble = useCallback(() => {
+    clearTimers();
+    setIsScrambling(true);
+    const frames = buildScrambleFrames(text);
+
+    frames.forEach((frame, index) => {
+      const timer = window.setTimeout(() => {
+        setDisplayText(frame);
+        if (index === frames.length - 1) setIsScrambling(false);
+      }, index * 85);
+      timersRef.current.push(timer);
+    });
+  }, [text]);
+
+  useEffect(() => {
+    setDisplayText(text);
+    return () => clearTimers();
+  }, [text]);
+
+  useEffect(() => {
+    const element = textRef.current;
+    const parent = element?.closest('.hover-loop');
+    if (!parent) return undefined;
+
+    parent.addEventListener('mouseenter', playScramble);
+    parent.addEventListener('mouseleave', playScramble);
+    parent.addEventListener('focusin', playScramble);
+    parent.addEventListener('focusout', playScramble);
+
+    return () => {
+      parent.removeEventListener('mouseenter', playScramble);
+      parent.removeEventListener('mouseleave', playScramble);
+      parent.removeEventListener('focusin', playScramble);
+      parent.removeEventListener('focusout', playScramble);
+    };
+  }, [playScramble]);
+
+  return (
+    <span
+      ref={textRef}
+      className={`scramble-text ${isScrambling ? 'is-scrambling' : ''}`}
+      aria-label={text}
+    >
+      {displayText}
+    </span>
+  );
+};
+
 const getAge = (dob) => {
   const birthDate = new Date(dob);
   const now = new Date();
@@ -186,6 +260,8 @@ function App() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [focusWordIndex, setFocusWordIndex] = useState(0);
 
+  const appShellRef = useRef(null);
+  const bubbleCanvasRef = useRef(null);
   const totalProjects = useMemo(() => projects.length, []);
 
   useEffect(() => {
@@ -259,6 +335,126 @@ function App() {
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const canvas = bubbleCanvasRef.current;
+    if (!canvas) return undefined;
+
+    const context = canvas.getContext('2d');
+    if (!context) return undefined;
+    const shellStyles = appShellRef.current ? getComputedStyle(appShellRef.current) : null;
+    const particleRgb = shellStyles?.getPropertyValue('--particle-rgb').trim() || '17, 17, 17';
+
+    const pointer = { x: 0, y: 0, active: false };
+    const particles = [];
+    let frameId = 0;
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+
+    const createParticle = () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.28,
+      vy: (Math.random() - 0.5) * 0.28,
+      driftX: (Math.random() - 0.5) * 0.06,
+      driftY: (Math.random() - 0.5) * 0.06,
+      size: 0.7 + Math.random() * 1.4,
+      alpha: 0.08 + Math.random() * 0.16
+    });
+
+    const setup = () => {
+      dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      particles.length = 0;
+      const count = Math.min(130, Math.max(54, Math.floor((width * height) / 19500)));
+      for (let index = 0; index < count; index += 1) {
+        particles.push(createParticle());
+      }
+    };
+
+    const draw = () => {
+      context.clearRect(0, 0, width, height);
+
+      particles.forEach((particle) => {
+        if (pointer.active) {
+          const dx = pointer.x - particle.x;
+          const dy = pointer.y - particle.y;
+          const distance = Math.hypot(dx, dy);
+
+          if (distance < 170 && distance > 0.001) {
+            const force = (170 - distance) / 170;
+            particle.vx += (dx / distance) * force * 0.07;
+            particle.vy += (dy / distance) * force * 0.07;
+          }
+        }
+
+        particle.vx *= 0.985;
+        particle.vy *= 0.985;
+        particle.x += particle.vx + particle.driftX;
+        particle.y += particle.vy + particle.driftY;
+
+        if (particle.x < -14) particle.x = width + 14;
+        if (particle.x > width + 14) particle.x = -14;
+        if (particle.y < -14) particle.y = height + 14;
+        if (particle.y > height + 14) particle.y = -14;
+
+        const pointerDistance = Math.hypot(pointer.x - particle.x, pointer.y - particle.y);
+        const nearby = pointer.active ? Math.max(0, 1 - pointerDistance / 185) : 0;
+        const radius = particle.size + nearby * 1.8;
+        const alpha = Math.min(0.58, particle.alpha + nearby * 0.4);
+
+        context.beginPath();
+        context.fillStyle = `rgba(${particleRgb}, ${alpha.toFixed(3)})`;
+        context.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      frameId = window.requestAnimationFrame(draw);
+    };
+
+    const onPointerMove = (event) => {
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      pointer.active = true;
+    };
+
+    const onPointerLeave = () => {
+      pointer.active = false;
+    };
+
+    setup();
+    pointer.x = width * 0.5;
+    pointer.y = height * 0.34;
+    draw();
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerdown', onPointerMove, { passive: true });
+    window.addEventListener('pointerleave', onPointerLeave);
+    window.addEventListener('resize', setup);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerdown', onPointerMove);
+      window.removeEventListener('pointerleave', onPointerLeave);
+      window.removeEventListener('resize', setup);
+    };
+  }, [activeTheme]);
+
+  const smoothThemeStyle = useMemo(
+    () => ({
+      '--scroll-angle': `${30 + scrollProgress * 280}deg`
+    }),
+    [scrollProgress]
+  );
+
   const handleContactChange = (event) => {
     const { name, value } = event.target;
     setContactForm((previous) => ({ ...previous, [name]: value }));
@@ -300,10 +496,11 @@ function App() {
   const isActiveNav = (target) => activeTheme === target.replace('#', '');
 
   return (
-    <div className="app-shell" data-theme={activeTheme}>
+    <div ref={appShellRef} className="app-shell" data-theme={activeTheme} style={smoothThemeStyle}>
       <div className="scroll-progress-wrap" aria-hidden="true">
         <motion.span className="scroll-progress" style={{ scaleX: scrollProgress }} />
       </div>
+      <canvas ref={bubbleCanvasRef} className="bubble-canvas" aria-hidden="true" />
 
       <header className="topbar">
         <div className="topbar-glow" aria-hidden="true" />
@@ -315,8 +512,8 @@ function App() {
 
           <nav className="nav-menu desktop-nav">
             {navItems.map((item) => (
-              <a key={item.label} href={item.target} className={isActiveNav(item.target) ? 'active' : ''}>
-                {item.label}
+              <a key={item.label} href={item.target} className={`hover-loop ${isActiveNav(item.target) ? 'active' : ''}`}>
+                <ScrambleText text={item.label} />
               </a>
             ))}
           </nav>
@@ -324,8 +521,8 @@ function App() {
           <div className="top-actions">
             <span className="theme-pill">Now viewing: {themeLabelMap[activeTheme]}</span>
 
-            <a className="github-btn" href={portfolio.github} target="_blank" rel="noreferrer">
-              <FaGithub /> GitHub
+            <a className="github-btn hover-loop" href={portfolio.github} target="_blank" rel="noreferrer">
+              <FaGithub /> <ScrambleText text="GitHub" />
             </a>
 
             <button
@@ -373,27 +570,29 @@ function App() {
                 </button>
               </div>
 
-              <div className="mobile-menu-radial">
-                <div className="mobile-menu-core">
-                  <strong>{portfolio.name}</strong>
-                  <small>Explore</small>
-                </div>
-
+              <div className="mobile-menu-links">
                 {navItems.map((item, index) => (
                   <motion.a
                     key={item.label}
                     href={item.target}
-                    className={`mobile-link ${isActiveNav(item.target) ? 'active' : ''}`}
-                    style={{ '--item-index': index, '--item-total': navItems.length }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.05 * (index + 1), duration: 0.22 }}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <span>{item.label}</span>
-                  </motion.a>
-                ))}
-              </div>
+                  className={`mobile-link hover-loop ${isActiveNav(item.target) ? 'active' : ''}`}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * (index + 1), duration: 0.22 }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div className="mobile-link-copy">
+                    <ScrambleText text={item.label} />
+                    <small>{item.meta}</small>
+                  </div>
+                  <b>{String(index + 1).padStart(2, '0')}</b>
+                </motion.a>
+              ))}
+
+              <a className="mobile-github hover-loop" href={portfolio.github} target="_blank" rel="noreferrer">
+                <FaGithub /> <ScrambleText text="GitHub" />
+              </a>
+            </div>
             </motion.aside>
           </motion.div>
         )}
@@ -440,28 +639,28 @@ function App() {
                   whileHover={{ y: -3, scale: 1.01 }}
                   whileTap={{ scale: 0.97 }}
                   href="#projects"
-                  className="btn-primary"
+                  className="btn-primary hover-loop"
                 >
-                  View Projects
+                  <ScrambleText text="View Projects" />
                 </motion.a>
 
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   href="#contact"
-                  className="btn-ghost"
+                  className="btn-ghost hover-loop"
                 >
-                  Hire Me
+                  <ScrambleText text="Hire Me" />
                 </motion.a>
 
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="btn-ghost btn-download"
+                  className="btn-ghost btn-download hover-loop"
                   href={RESUME_FILE}
                   download="Sandeep-Pal-Resume.pdf"
                 >
-                  <FaFileArrowDown /> Download Resume
+                  <FaFileArrowDown /> <ScrambleText text="Download Resume" />
                 </motion.a>
               </div>
 
@@ -613,8 +812,8 @@ function App() {
                 >
                   <div className="project-topline">
                     <p>{project.category}</p>
-                    <a href={project.link} target="_blank" rel="noreferrer">
-                      <FaLink /> Live
+                    <a href={project.link} target="_blank" rel="noreferrer" className="hover-loop">
+                      <FaLink /> <ScrambleText text="Live" />
                     </a>
                   </div>
                   <h3>{project.title}</h3>
@@ -650,12 +849,12 @@ function App() {
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="btn-primary"
+                  className="btn-primary hover-loop"
                   href={portfolio.github}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <FaGithub /> Explore GitHub
+                  <FaGithub /> <ScrambleText text="Explore GitHub" />
                 </motion.a>
               </motion.article>
 
@@ -695,10 +894,14 @@ function App() {
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="btn-primary"
+                  className="btn-primary hover-loop"
                   disabled={contactStatus.sending}
                 >
-                  {contactStatus.sending ? 'Opening Mail App...' : 'Send Message'}
+                  {contactStatus.sending ? (
+                    <ScrambleText text="Opening Mail App..." />
+                  ) : (
+                    <ScrambleText text="Send Message" />
+                  )}
                 </motion.button>
 
                 {contactStatus.message ? (
@@ -716,7 +919,7 @@ function App() {
             © {new Date().getFullYear()} {portfolio.name}. All rights reserved.
           </p>
           <a href={portfolio.github} target="_blank" rel="noreferrer">
-            <FaGithub /> github.com/sandeeppaul78
+            <FaGithub /> <ScrambleText text="github.com/sandeeppaul78" />
           </a>
         </div>
       </footer>

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  FaEnvelope,
   FaFileArrowDown,
   FaGithub,
   FaLaptopCode,
@@ -184,12 +183,8 @@ function App() {
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTheme, setActiveTheme] = useState('home');
-  const [cursorEnabled, setCursorEnabled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [focusWordIndex, setFocusWordIndex] = useState(0);
-
-  const cursorDotRef = useRef(null);
-  const cursorRingRef = useRef(null);
 
   const totalProjects = useMemo(() => projects.length, []);
 
@@ -230,6 +225,15 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const closeOnDesktop = () => {
+      if (window.innerWidth > 760) setIsMenuOpen(false);
+    };
+
+    window.addEventListener('resize', closeOnDesktop);
+    return () => window.removeEventListener('resize', closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
     const setProgress = () => {
       const scrolled = window.scrollY;
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -253,66 +257,6 @@ function App() {
     }, 2200);
 
     return () => window.clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const finePointer = window.matchMedia('(pointer: fine)').matches;
-    const dot = cursorDotRef.current;
-    const ring = cursorRingRef.current;
-
-    if (!finePointer || !dot || !ring) return undefined;
-
-    setCursorEnabled(true);
-    document.body.classList.add('cursor-enhanced');
-
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let ringX = mouseX;
-    let ringY = mouseY;
-    let frameId;
-
-    const moveCursor = (event) => {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-      dot.style.transform = `translate3d(${mouseX - 4}px, ${mouseY - 4}px, 0)`;
-    };
-
-    const animateRing = () => {
-      ringX += (mouseX - ringX) * 0.18;
-      ringY += (mouseY - ringY) * 0.18;
-      ring.style.transform = `translate3d(${ringX - 18}px, ${ringY - 18}px, 0)`;
-      frameId = window.requestAnimationFrame(animateRing);
-    };
-
-    const setCursorState = (isActive) => {
-      dot.classList.toggle('active', isActive);
-      ring.classList.toggle('active', isActive);
-    };
-
-    const handleOver = (event) => {
-      const interactive = event.target.closest(
-        'a, button, input, textarea, .hamburger-btn, .mobile-link, .mobile-close-btn'
-      );
-      setCursorState(Boolean(interactive));
-    };
-
-    const handleDown = () => setCursorState(true);
-    const handleUp = () => setCursorState(false);
-
-    window.addEventListener('mousemove', moveCursor);
-    window.addEventListener('mousedown', handleDown);
-    window.addEventListener('mouseup', handleUp);
-    document.addEventListener('mouseover', handleOver);
-    frameId = window.requestAnimationFrame(animateRing);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      window.removeEventListener('mousemove', moveCursor);
-      window.removeEventListener('mousedown', handleDown);
-      window.removeEventListener('mouseup', handleUp);
-      document.removeEventListener('mouseover', handleOver);
-      document.body.classList.remove('cursor-enhanced');
-    };
   }, []);
 
   const handleContactChange = (event) => {
@@ -361,17 +305,6 @@ function App() {
         <motion.span className="scroll-progress" style={{ scaleX: scrollProgress }} />
       </div>
 
-      <div
-        ref={cursorRingRef}
-        className={`cursor-ring ${cursorEnabled ? 'visible' : ''}`}
-        aria-hidden="true"
-      />
-      <div
-        ref={cursorDotRef}
-        className={`cursor-dot ${cursorEnabled ? 'visible' : ''}`}
-        aria-hidden="true"
-      />
-
       <header className="topbar">
         <div className="topbar-glow" aria-hidden="true" />
         <div className="container topbar-inner">
@@ -379,6 +312,14 @@ function App() {
             <img src="/sandeep-logo.svg" alt="SP logo" />
             <span>{portfolio.name}</span>
           </a>
+
+          <nav className="nav-menu desktop-nav">
+            {navItems.map((item) => (
+              <a key={item.label} href={item.target} className={isActiveNav(item.target) ? 'active' : ''}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
 
           <div className="top-actions">
             <span className="theme-pill">Now viewing: {themeLabelMap[activeTheme]}</span>
@@ -409,22 +350,19 @@ function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.28 }}
             onClick={() => setIsMenuOpen(false)}
           >
             <motion.aside
               className="mobile-menu-panel"
-              initial={{ opacity: 0, clipPath: 'circle(2% at 95% 5%)' }}
-              animate={{ opacity: 1, clipPath: 'circle(150% at 95% 5%)' }}
-              exit={{ opacity: 0, clipPath: 'circle(2% at 95% 5%)' }}
-              transition={{ duration: 0.45, ease: 'easeInOut' }}
+              initial={{ scale: 0.42, opacity: 0, y: -24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.65, opacity: 0, y: -20 }}
+              transition={{ duration: 0.34, ease: 'easeOut' }}
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mobile-menu-header">
-                <div>
-                  <p className="menu-kicker">Menu</p>
-                  <h3>Navigate Portfolio</h3>
-                </div>
+                <h3>Quick Nav</h3>
                 <button
                   type="button"
                   className="mobile-close-btn"
@@ -435,36 +373,26 @@ function App() {
                 </button>
               </div>
 
-              <div className="mobile-menu-links">
+              <div className="mobile-menu-radial">
+                <div className="mobile-menu-core">
+                  <strong>{portfolio.name}</strong>
+                  <small>Explore</small>
+                </div>
+
                 {navItems.map((item, index) => (
                   <motion.a
                     key={item.label}
                     href={item.target}
                     className={`mobile-link ${isActiveNav(item.target) ? 'active' : ''}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.06 * (index + 1), duration: 0.28 }}
+                    style={{ '--item-index': index, '--item-total': navItems.length }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.05 * (index + 1), duration: 0.22 }}
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <div className="mobile-link-content">
-                      <span>{item.label}</span>
-                      <small>{item.meta}</small>
-                    </div>
-                    <b className="mobile-link-arrow">{String(index + 1).padStart(2, '0')}</b>
+                    <span>{item.label}</span>
                   </motion.a>
                 ))}
-              </div>
-
-              <div className="mobile-actions">
-                <a className="btn-primary" href={portfolio.github} target="_blank" rel="noreferrer">
-                  <FaGithub /> Explore GitHub
-                </a>
-                <a className="btn-ghost" href={RESUME_FILE} download="Sandeep-Pal-Resume.pdf">
-                  <FaFileArrowDown /> Download Resume
-                </a>
-                <a className="btn-ghost" href={`mailto:${CONTACT_EMAIL}`}>
-                  <FaEnvelope /> Send Mail
-                </a>
               </div>
             </motion.aside>
           </motion.div>

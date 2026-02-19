@@ -520,12 +520,27 @@ main,
 }
 
 .scramble-text {
+  position: relative;
   display: inline-block;
   min-width: 0.8em;
   white-space: nowrap;
+  vertical-align: middle;
   transition:
     letter-spacing 0.2s ease,
     filter 0.2s ease;
+}
+
+.scramble-text-sizer {
+  visibility: hidden;
+  display: block;
+  white-space: nowrap;
+}
+
+.scramble-text-live {
+  position: absolute;
+  inset: 0;
+  display: block;
+  white-space: nowrap;
 }
 
 .scramble-text.is-scrambling {
@@ -687,7 +702,7 @@ main,
   inset: -20% -60%;
   background: linear-gradient(110deg, transparent 44%, rgba(255, 255, 255, 0.4) 50%, transparent 58%);
   transform: translateX(-120%);
-  transition: transform 0.72s ease;
+  transition: transform 1.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .btn-primary:hover::after,

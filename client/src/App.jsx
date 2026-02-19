@@ -108,7 +108,7 @@ const projects = [
   },
   {
     id: 'project-4',
-    title: 'Naam Jaap Counter',
+    title: 'Counter',
     category: 'Practice Project',
     link: 'https://sandeeppaul78.github.io/naam-jaap-counter/',
     description: 'Early learning project built as a focused counter app for naam jaap tracking.',
@@ -157,20 +157,17 @@ const fadeInUp = {
   viewport: { once: true, amount: 0.2 }
 };
 
-const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%*';
+const buildTypeFrames = (value) => {
+  const safeText = value || '';
+  if (!safeText) return [''];
 
-const randomScramble = (text) =>
-  text
-    .split('')
-    .map((char) => {
-      if (char === ' ') return ' ';
-      return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
-    })
-    .join('');
+  const frames = [''];
+  for (let index = 1; index <= safeText.length; index += 1) {
+    frames.push(safeText.slice(0, index));
+  }
 
-const reverseString = (value) => value.split('').reverse().join('');
-
-const buildScrambleFrames = (text) => [randomScramble(text), randomScramble(text), reverseString(text), text];
+  return frames;
+};
 
 const ScrambleText = ({ text }) => {
   const [displayText, setDisplayText] = useState(text);
@@ -178,47 +175,65 @@ const ScrambleText = ({ text }) => {
   const textRef = useRef(null);
   const timersRef = useRef([]);
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
-  };
+  }, []);
 
-  const playScramble = useCallback(() => {
+  const playTyping = useCallback(() => {
+    const safeText = text || '';
     clearTimers();
+
+    if (!safeText) {
+      setDisplayText('');
+      setIsScrambling(false);
+      return;
+    }
+
+    const frames = buildTypeFrames(safeText);
     setIsScrambling(true);
-    const frames = buildScrambleFrames(text);
 
     frames.forEach((frame, index) => {
       const timer = window.setTimeout(() => {
         setDisplayText(frame);
-        if (index === frames.length - 1) setIsScrambling(false);
-      }, index * 85);
+        if (index === frames.length - 1) {
+          setDisplayText(safeText);
+          setIsScrambling(false);
+        }
+      }, index * 62);
+
       timersRef.current.push(timer);
     });
-  }, [text]);
+  }, [clearTimers, text]);
 
   useEffect(() => {
-    setDisplayText(text);
+    setDisplayText(text || '');
     return () => clearTimers();
-  }, [text]);
+  }, [clearTimers, text]);
 
   useEffect(() => {
     const element = textRef.current;
     const parent = element?.closest('.hover-loop');
     if (!parent) return undefined;
 
-    parent.addEventListener('mouseenter', playScramble);
-    parent.addEventListener('mouseleave', playScramble);
-    parent.addEventListener('focusin', playScramble);
-    parent.addEventListener('focusout', playScramble);
+    const resetText = () => {
+      clearTimers();
+      setDisplayText(text || '');
+      setIsScrambling(false);
+    };
+
+    parent.addEventListener('mouseenter', playTyping);
+    parent.addEventListener('focusin', playTyping);
+    parent.addEventListener('mouseleave', resetText);
+    parent.addEventListener('focusout', resetText);
 
     return () => {
-      parent.removeEventListener('mouseenter', playScramble);
-      parent.removeEventListener('mouseleave', playScramble);
-      parent.removeEventListener('focusin', playScramble);
-      parent.removeEventListener('focusout', playScramble);
+      parent.removeEventListener('mouseenter', playTyping);
+      parent.removeEventListener('focusin', playTyping);
+      parent.removeEventListener('mouseleave', resetText);
+      parent.removeEventListener('focusout', resetText);
     };
-  }, [playScramble]);
+  }, [clearTimers, playTyping, text]);
 
   return (
     <span
@@ -226,7 +241,12 @@ const ScrambleText = ({ text }) => {
       className={`scramble-text ${isScrambling ? 'is-scrambling' : ''}`}
       aria-label={text}
     >
-      {displayText}
+      <span className="scramble-text-sizer" aria-hidden="true">
+        {text || '\u00A0'}
+      </span>
+      <span className="scramble-text-live" aria-hidden="true">
+        {displayText || '\u00A0'}
+      </span>
     </span>
   );
 };

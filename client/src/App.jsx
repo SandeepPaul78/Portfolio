@@ -41,12 +41,6 @@ const portfolio = {
       institute: 'GJU, Hisar',
       duration: 'Graduated 2021',
       score: '86%'
-    },
-    {
-      title: 'Class 12th',
-      institute: 'Senior Secondary',
-      duration: 'Batch 2018',
-      score: ''
     }
   ],
   experience: [
@@ -149,6 +143,164 @@ const themeLabelMap = {
   projects: 'Projects',
   contact: 'Contact'
 };
+
+const themePalette = {
+  home: {
+    ink: [17, 17, 17],
+    inkSoft: [95, 86, 74],
+    line: [17, 17, 17, 0.2],
+    surface: [239, 231, 219],
+    surfaceAlt: [228, 216, 200],
+    accent: [17, 17, 17],
+    accentContrast: [243, 236, 226],
+    glassBg: [255, 255, 255, 0.3],
+    glassStroke: [255, 255, 255, 0.44],
+    glassHighlight: [255, 255, 255, 0.56],
+    particle: [17, 17, 17],
+    bgX: 12,
+    bgY: 10
+  },
+  about: {
+    ink: [243, 236, 226],
+    inkSoft: [213, 204, 191],
+    line: [243, 236, 226, 0.24],
+    surface: [13, 13, 13],
+    surfaceAlt: [24, 24, 24],
+    accent: [243, 236, 226],
+    accentContrast: [17, 17, 17],
+    glassBg: [18, 18, 18, 0.54],
+    glassStroke: [243, 236, 226, 0.24],
+    glassHighlight: [243, 236, 226, 0.16],
+    particle: [243, 236, 226],
+    bgX: 84,
+    bgY: 14
+  },
+  experience: {
+    ink: [17, 17, 17],
+    inkSoft: [95, 86, 74],
+    line: [17, 17, 17, 0.2],
+    surface: [232, 221, 208],
+    surfaceAlt: [220, 207, 191],
+    accent: [17, 17, 17],
+    accentContrast: [243, 236, 226],
+    glassBg: [255, 255, 255, 0.3],
+    glassStroke: [255, 255, 255, 0.4],
+    glassHighlight: [255, 255, 255, 0.52],
+    particle: [17, 17, 17],
+    bgX: 18,
+    bgY: 42
+  },
+  skills: {
+    ink: [243, 236, 226],
+    inkSoft: [215, 206, 195],
+    line: [243, 236, 226, 0.22],
+    surface: [17, 17, 17],
+    surfaceAlt: [31, 31, 31],
+    accent: [243, 236, 226],
+    accentContrast: [19, 19, 19],
+    glassBg: [20, 20, 20, 0.56],
+    glassStroke: [243, 236, 226, 0.22],
+    glassHighlight: [243, 236, 226, 0.14],
+    particle: [243, 236, 226],
+    bgX: 82,
+    bgY: 46
+  },
+  projects: {
+    ink: [17, 17, 17],
+    inkSoft: [95, 86, 74],
+    line: [17, 17, 17, 0.2],
+    surface: [223, 210, 194],
+    surfaceAlt: [209, 196, 178],
+    accent: [17, 17, 17],
+    accentContrast: [243, 236, 226],
+    glassBg: [255, 255, 255, 0.28],
+    glassStroke: [255, 255, 255, 0.36],
+    glassHighlight: [255, 255, 255, 0.5],
+    particle: [17, 17, 17],
+    bgX: 20,
+    bgY: 78
+  },
+  contact: {
+    ink: [243, 236, 226],
+    inkSoft: [221, 212, 200],
+    line: [243, 236, 226, 0.24],
+    surface: [9, 9, 9],
+    surfaceAlt: [24, 24, 24],
+    accent: [243, 236, 226],
+    accentContrast: [17, 17, 17],
+    glassBg: [17, 17, 17, 0.56],
+    glassStroke: [243, 236, 226, 0.24],
+    glassHighlight: [243, 236, 226, 0.15],
+    particle: [243, 236, 226],
+    bgX: 78,
+    bgY: 82
+  }
+};
+
+const textTonePalette = {
+  dark: {
+    ink: [17, 17, 17],
+    inkSoft: [92, 84, 72],
+    line: [17, 17, 17, 0.24],
+    accent: [17, 17, 17],
+    accentContrast: [243, 236, 226],
+    particle: [17, 17, 17]
+  },
+  light: {
+    ink: [243, 236, 226],
+    inkSoft: [221, 212, 200],
+    line: [243, 236, 226, 0.24],
+    accent: [243, 236, 226],
+    accentContrast: [17, 17, 17],
+    particle: [243, 236, 226]
+  }
+};
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const lerp = (start, end, progress) => start + (end - start) * progress;
+const easeThemeProgress = (value) => value * value * (3 - 2 * value);
+const resolveTheme = (themeKey) => themePalette[themeKey] || themePalette.home;
+const blendRgbArray = (from, to, progress) => [
+  lerp(from[0], to[0], progress),
+  lerp(from[1], to[1], progress),
+  lerp(from[2], to[2], progress)
+];
+
+const srgbToLinear = (channel) => {
+  const normalized = channel / 255;
+  return normalized <= 0.03928
+    ? normalized / 12.92
+    : Math.pow((normalized + 0.055) / 1.055, 2.4);
+};
+
+const getRelativeLuminance = ([red, green, blue]) =>
+  0.2126 * srgbToLinear(red) + 0.7152 * srgbToLinear(green) + 0.0722 * srgbToLinear(blue);
+
+const getTextToneMix = (surfaceRgb, surfaceAltRgb) => {
+  const averageSurface = [
+    (surfaceRgb[0] + surfaceAltRgb[0]) * 0.5,
+    (surfaceRgb[1] + surfaceAltRgb[1]) * 0.5,
+    (surfaceRgb[2] + surfaceAltRgb[2]) * 0.5
+  ];
+  const luminance = getRelativeLuminance(averageSurface);
+  const lightTextMix = clamp((0.2 - luminance) / 0.08, 0, 1);
+  return easeThemeProgress(lightTextMix);
+};
+
+const mixRgb = (from, to, progress) =>
+  `rgb(${Math.round(lerp(from[0], to[0], progress))}, ${Math.round(lerp(from[1], to[1], progress))}, ${Math.round(
+    lerp(from[2], to[2], progress)
+  )})`;
+
+const mixRgba = (from, to, progress) =>
+  `rgba(${Math.round(lerp(from[0], to[0], progress))}, ${Math.round(lerp(from[1], to[1], progress))}, ${Math.round(
+    lerp(from[2], to[2], progress)
+  )}, ${lerp(from[3], to[3], progress).toFixed(3)})`;
+
+const mixParticle = (from, to, progress) =>
+  `${Math.round(lerp(from[0], to[0], progress))}, ${Math.round(lerp(from[1], to[1], progress))}, ${Math.round(
+    lerp(from[2], to[2], progress)
+  )}`;
 
 const fadeInUp = {
   initial: { opacity: 0, y: 28 },
@@ -278,6 +430,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTheme, setActiveTheme] = useState('home');
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [themeBlend, setThemeBlend] = useState({ from: 'home', to: 'home', progress: 0 });
   const [focusWordIndex, setFocusWordIndex] = useState(0);
 
   const appShellRef = useRef(null);
@@ -330,20 +483,77 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const sections = Array.from(document.querySelectorAll('section[data-theme]'));
+    if (!sections.length) return undefined;
+
+    const readAnchors = () =>
+      sections.map((section) => {
+        const height = Math.max(section.offsetHeight, window.innerHeight * 0.55);
+        return {
+          theme: section.dataset.theme || 'home',
+          center: section.offsetTop + height * 0.5
+        };
+      });
+
+    let sectionAnchors = readAnchors();
+
+    const getThemeBlend = () => {
+      const viewportCenter = window.scrollY + window.innerHeight * 0.5;
+      const first = sectionAnchors[0];
+      const last = sectionAnchors[sectionAnchors.length - 1];
+
+      if (sectionAnchors.length === 1 || viewportCenter <= first.center) {
+        return { from: first.theme, to: first.theme, progress: 0 };
+      }
+
+      if (viewportCenter >= last.center) {
+        return { from: last.theme, to: last.theme, progress: 0 };
+      }
+
+      for (let index = 0; index < sectionAnchors.length - 1; index += 1) {
+        const current = sectionAnchors[index];
+        const next = sectionAnchors[index + 1];
+
+        if (viewportCenter <= next.center) {
+          const distance = Math.max(next.center - current.center, 1);
+          const rawProgress = clamp((viewportCenter - current.center) / distance, 0, 1);
+          return {
+            from: current.theme,
+            to: next.theme,
+            progress: easeThemeProgress(rawProgress)
+          };
+        }
+      }
+
+      return { from: last.theme, to: last.theme, progress: 0 };
+    };
+
     const setProgress = () => {
       const scrolled = window.scrollY;
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       const value = scrollHeight > 0 ? Math.min(scrolled / scrollHeight, 1) : 0;
-      setScrollProgress(value);
+      setScrollProgress((previous) => (Math.abs(previous - value) < 0.001 ? previous : value));
+
+      const nextBlend = getThemeBlend();
+      setThemeBlend((previous) => {
+        const sameTheme = previous.from === nextBlend.from && previous.to === nextBlend.to;
+        const closeProgress = Math.abs(previous.progress - nextBlend.progress) < 0.01;
+        return sameTheme && closeProgress ? previous : nextBlend;
+      });
+    };
+
+    const handleResize = () => {
+      sectionAnchors = readAnchors();
+      setProgress();
     };
 
     setProgress();
     window.addEventListener('scroll', setProgress, { passive: true });
-    window.addEventListener('resize', setProgress);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('scroll', setProgress);
-      window.removeEventListener('resize', setProgress);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -468,12 +678,33 @@ function App() {
     };
   }, [activeTheme]);
 
-  const smoothThemeStyle = useMemo(
-    () => ({
-      '--scroll-angle': `${30 + scrollProgress * 280}deg`
-    }),
-    [scrollProgress]
-  );
+  const smoothThemeStyle = useMemo(() => {
+    const { from, to, progress } = themeBlend;
+    const startTheme = resolveTheme(from);
+    const endTheme = resolveTheme(to);
+    const surfaceBlend = blendRgbArray(startTheme.surface, endTheme.surface, progress);
+    const surfaceAltBlend = blendRgbArray(startTheme.surfaceAlt, endTheme.surfaceAlt, progress);
+    const textToneMix = getTextToneMix(surfaceBlend, surfaceAltBlend);
+    const darkTone = textTonePalette.dark;
+    const lightTone = textTonePalette.light;
+
+    return {
+      '--scroll-angle': `${30 + scrollProgress * 280}deg`,
+      '--ink': mixRgb(darkTone.ink, lightTone.ink, textToneMix),
+      '--ink-soft': mixRgb(darkTone.inkSoft, lightTone.inkSoft, textToneMix),
+      '--line': mixRgba(darkTone.line, lightTone.line, textToneMix),
+      '--surface': mixRgb(startTheme.surface, endTheme.surface, progress),
+      '--surface-alt': mixRgb(startTheme.surfaceAlt, endTheme.surfaceAlt, progress),
+      '--accent': mixRgb(darkTone.accent, lightTone.accent, textToneMix),
+      '--accent-contrast': mixRgb(darkTone.accentContrast, lightTone.accentContrast, textToneMix),
+      '--glass-bg': mixRgba(startTheme.glassBg, endTheme.glassBg, progress),
+      '--glass-stroke': mixRgba(startTheme.glassStroke, endTheme.glassStroke, progress),
+      '--glass-highlight': mixRgba(startTheme.glassHighlight, endTheme.glassHighlight, progress),
+      '--particle-rgb': mixParticle(darkTone.particle, lightTone.particle, textToneMix),
+      '--bg-x': `${lerp(startTheme.bgX, endTheme.bgX, progress).toFixed(2)}%`,
+      '--bg-y': `${lerp(startTheme.bgY, endTheme.bgY, progress).toFixed(2)}%`
+    };
+  }, [scrollProgress, themeBlend]);
 
   const handleContactChange = (event) => {
     const { name, value } = event.target;

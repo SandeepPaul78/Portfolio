@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import {
   FaFileArrowDown,
   FaGithub,
@@ -414,6 +414,89 @@ const getAge = (dob) => {
   }
 
   return age;
+};
+
+const LazySectionContent = ({ sectionId, placeholderHeight = 520, children }) => {
+  const [isLoaded, setIsLoaded] = useState(sectionId === 'home');
+  const shellRef = useRef(null);
+  const sectionControls = useAnimation();
+  const hasMountedInViewRef = useRef(false);
+
+  const replaySectionEntry = useCallback(() => {
+    sectionControls.set({ opacity: 0, y: 44, filter: 'blur(6px)' });
+    sectionControls.start({
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      transition: { duration: 0.86, ease: [0.16, 1, 0.3, 1] }
+    });
+  }, [sectionControls]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (!isLoaded) {
+              setIsLoaded(true);
+            } else {
+              replaySectionEntry();
+            }
+            hasMountedInViewRef.current = true;
+          } else if (hasMountedInViewRef.current) {
+            sectionControls.set({ opacity: 0.02, y: 24, filter: 'blur(4px)' });
+          }
+        });
+      },
+      { threshold: 0.22, rootMargin: '-4% 0px -18% 0px' }
+    );
+
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, [isLoaded, replaySectionEntry, sectionControls]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    replaySectionEntry();
+  }, [isLoaded, replaySectionEntry]);
+
+  return (
+    <div
+      ref={shellRef}
+      className={`lazy-section-shell ${isLoaded ? 'is-loaded' : ''}`}
+      aria-busy={!isLoaded}
+      data-section-ready={isLoaded ? 'true' : 'false'}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {isLoaded ? (
+          <motion.div
+            key={`${sectionId}-content`}
+            className="lazy-section-content"
+            initial={false}
+            animate={sectionControls}
+          >
+            {children}
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`${sectionId}-placeholder`}
+            className="lazy-section-placeholder"
+            style={{ minHeight: `${placeholderHeight}px` }}
+            initial={{ opacity: 0.6, scale: 0.985 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={{ duration: 0.42, ease: 'easeOut' }}
+          >
+            <span className="lazy-placeholder-line" />
+            <span className="lazy-placeholder-line short" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 };
 
 function App() {
@@ -953,47 +1036,49 @@ function App() {
         </section>
 
         <section id="about" className="section-block themed-section theme-about" data-theme="about">
-          <div className="container">
-            <motion.div {...fadeInUp} className="section-head">
-              <p className="section-label">About</p>
-              <h2>Developer profile at a glance</h2>
-            </motion.div>
+          <LazySectionContent sectionId="about" placeholderHeight={560}>
+            <div className="container">
+              <motion.div {...fadeInUp} className="section-head">
+                <p className="section-label">About</p>
+                <h2>Developer profile at a glance</h2>
+              </motion.div>
 
-            <div className="about-layout">
-              <motion.article {...fadeInUp} className="card">
-                <h3>Who I am</h3>
-                <p>{portfolio.about}</p>
-                <ul>
-                  <li>
-                    <FaLaptopCode /> Currently working at <strong>{portfolio.company}</strong> as{' '}
-                    <strong>{portfolio.role}</strong>
-                  </li>
-                  <li>
-                    <FaLocationDot /> Permanent: {portfolio.location.permanent}
-                  </li>
-                  <li>
-                    <FaLocationDot /> Temporary: {portfolio.location.temporary}
-                  </li>
-                </ul>
-              </motion.article>
+              <div className="about-layout">
+                <motion.article {...fadeInUp} className="card">
+                  <h3>Who I am</h3>
+                  <p>{portfolio.about}</p>
+                  <ul>
+                    <li>
+                      <FaLaptopCode /> Currently working at <strong>{portfolio.company}</strong> as{' '}
+                      <strong>{portfolio.role}</strong>
+                    </li>
+                    <li>
+                      <FaLocationDot /> Permanent: {portfolio.location.permanent}
+                    </li>
+                    <li>
+                      <FaLocationDot /> Temporary: {portfolio.location.temporary}
+                    </li>
+                  </ul>
+                </motion.article>
 
-              <motion.article {...fadeInUp} className="card">
-                <h3>Education</h3>
-                <div className="timeline compact">
-                  {portfolio.education.map((item) => (
-                    <div className="timeline-item" key={item.title}>
-                      <p className="meta-line">
-                        <FaUserGraduate /> {item.duration}
-                      </p>
-                      <h4>{item.title}</h4>
-                      <p>{item.institute}</p>
-                      {item.score ? <small>{item.score}</small> : null}
-                    </div>
-                  ))}
-                </div>
-              </motion.article>
+                <motion.article {...fadeInUp} className="card">
+                  <h3>Education</h3>
+                  <div className="timeline compact">
+                    {portfolio.education.map((item) => (
+                      <div className="timeline-item" key={item.title}>
+                        <p className="meta-line">
+                          <FaUserGraduate /> {item.duration}
+                        </p>
+                        <h4>{item.title}</h4>
+                        <p>{item.institute}</p>
+                        {item.score ? <small>{item.score}</small> : null}
+                      </div>
+                    ))}
+                  </div>
+                </motion.article>
+              </div>
             </div>
-          </div>
+          </LazySectionContent>
         </section>
 
         <section
@@ -1001,166 +1086,174 @@ function App() {
           className="section-block themed-section theme-experience"
           data-theme="experience"
         >
-          <div className="container">
-            <motion.div {...fadeInUp} className="section-head">
-              <p className="section-label">Experience</p>
-              <h2>Professional journey</h2>
-            </motion.div>
+          <LazySectionContent sectionId="experience" placeholderHeight={520}>
+            <div className="container">
+              <motion.div {...fadeInUp} className="section-head">
+                <p className="section-label">Experience</p>
+                <h2>Professional journey</h2>
+              </motion.div>
 
-            <div className="timeline">
-              {portfolio.experience.map((item) => (
-                <motion.article {...fadeInUp} className="timeline-item card" key={`${item.title}-${item.company}`}>
-                  <p className="meta-line">{item.duration}</p>
-                  <h3>{item.title}</h3>
-                  <h4>{item.company}</h4>
-                  <ul>
-                    {item.highlights.map((line) => (
-                      <li key={line}>{line}</li>
-                    ))}
-                  </ul>
-                </motion.article>
-              ))}
+              <div className="timeline">
+                {portfolio.experience.map((item) => (
+                  <motion.article {...fadeInUp} className="timeline-item card" key={`${item.title}-${item.company}`}>
+                    <p className="meta-line">{item.duration}</p>
+                    <h3>{item.title}</h3>
+                    <h4>{item.company}</h4>
+                    <ul>
+                      {item.highlights.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </motion.article>
+                ))}
+              </div>
             </div>
-          </div>
+          </LazySectionContent>
         </section>
 
         <section id="skills" className="section-block themed-section theme-skills" data-theme="skills">
-          <div className="container">
-            <motion.div {...fadeInUp} className="section-head">
-              <p className="section-label">Skills</p>
-              <h2>Tools and technologies</h2>
-            </motion.div>
+          <LazySectionContent sectionId="skills" placeholderHeight={500}>
+            <div className="container">
+              <motion.div {...fadeInUp} className="section-head">
+                <p className="section-label">Skills</p>
+                <h2>Tools and technologies</h2>
+              </motion.div>
 
-            <div className="skills-layout">
-              {Object.entries(portfolio.skills).map(([category, values]) => (
-                <motion.article {...fadeInUp} className="skill-card card" key={category}>
-                  <h3>{category}</h3>
-                  <div className="skill-tags">
-                    {values.map((skill) => (
-                      <span key={skill}>{skill}</span>
-                    ))}
-                  </div>
-                </motion.article>
-              ))}
+              <div className="skills-layout">
+                {Object.entries(portfolio.skills).map(([category, values]) => (
+                  <motion.article {...fadeInUp} className="skill-card card" key={category}>
+                    <h3>{category}</h3>
+                    <div className="skill-tags">
+                      {values.map((skill) => (
+                        <span key={skill}>{skill}</span>
+                      ))}
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
             </div>
-          </div>
+          </LazySectionContent>
         </section>
 
         <section id="projects" className="section-block themed-section theme-projects" data-theme="projects">
-          <div className="container">
-            <motion.div {...fadeInUp} className="section-head">
-              <p className="section-label">Projects</p>
-              <h2>Work samples and practice builds</h2>
-            </motion.div>
+          <LazySectionContent sectionId="projects" placeholderHeight={660}>
+            <div className="container">
+              <motion.div {...fadeInUp} className="section-head">
+                <p className="section-label">Projects</p>
+                <h2>Work samples and practice builds</h2>
+              </motion.div>
 
-            <div className="projects-grid">
-              {projects.map((project, index) => (
-                <motion.article
-                  {...fadeInUp}
-                  transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.24) }}
-                  className="project-card card"
-                  key={project.id}
-                >
-                  <div className="project-topline">
-                    <p>{project.category}</p>
-                    <a href={project.link} target="_blank" rel="noreferrer" className="hover-loop">
-                      <FaLink /> <ScrambleText text="Live" />
-                    </a>
-                  </div>
-                  <h3>{project.title}</h3>
-                  <p>{project.description}</p>
-                  <div className="stack-tags">
-                    {project.stack.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
-                </motion.article>
-              ))}
+              <div className="projects-grid">
+                {projects.map((project, index) => (
+                  <motion.article
+                    {...fadeInUp}
+                    transition={{ duration: 0.45, delay: Math.min(index * 0.06, 0.24) }}
+                    className="project-card card"
+                    key={project.id}
+                  >
+                    <div className="project-topline">
+                      <p>{project.category}</p>
+                      <a href={project.link} target="_blank" rel="noreferrer" className="hover-loop">
+                        <FaLink /> <ScrambleText text="Live" />
+                      </a>
+                    </div>
+                    <h3>{project.title}</h3>
+                    <p>{project.description}</p>
+                    <div className="stack-tags">
+                      {project.stack.map((item) => (
+                        <span key={item}>{item}</span>
+                      ))}
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
             </div>
-          </div>
+          </LazySectionContent>
         </section>
 
         <section id="contact" className="section-block themed-section theme-contact" data-theme="contact">
-          <div className="container">
-            <motion.div {...fadeInUp} className="section-head">
-              <p className="section-label">Contact</p>
-              <h2>Let us build something strong together</h2>
-            </motion.div>
+          <LazySectionContent sectionId="contact" placeholderHeight={580}>
+            <div className="container">
+              <motion.div {...fadeInUp} className="section-head">
+                <p className="section-label">Contact</p>
+                <h2>Let us build something strong together</h2>
+              </motion.div>
 
-            <div className="contact-layout">
-              <motion.article {...fadeInUp} className="card contact-info">
-                <h3>Open for UI / Frontend roles</h3>
-                <p>
-                  I am currently working as a UI Developer and available for impactful frontend opportunities,
-                  freelance work, and product collaboration.
-                </p>
-                <p className="direct-mail">
-                  Direct email: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-                </p>
-                <motion.a
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="btn-primary hover-loop"
-                  href={portfolio.github}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <FaGithub /> <ScrambleText text="Explore GitHub" />
-                </motion.a>
-              </motion.article>
+              <div className="contact-layout">
+                <motion.article {...fadeInUp} className="card contact-info">
+                  <h3>Open for UI / Frontend roles</h3>
+                  <p>
+                    I am currently working as a UI Developer and available for impactful frontend opportunities,
+                    freelance work, and product collaboration.
+                  </p>
+                  <p className="direct-mail">
+                    Direct email: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+                  </p>
+                  <motion.a
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="btn-primary hover-loop"
+                    href={portfolio.github}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <FaGithub /> <ScrambleText text="Explore GitHub" />
+                  </motion.a>
+                </motion.article>
 
-              <motion.form {...fadeInUp} className="card contact-form" onSubmit={handleContactSubmit}>
-                <label htmlFor="name">Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  value={contactForm.name}
-                  onChange={handleContactChange}
-                  placeholder="Your name"
-                  required
-                />
+                <motion.form {...fadeInUp} className="card contact-form" onSubmit={handleContactSubmit}>
+                  <label htmlFor="name">Name</label>
+                  <input
+                    id="name"
+                    name="name"
+                    value={contactForm.name}
+                    onChange={handleContactChange}
+                    placeholder="Your name"
+                    required
+                  />
 
-                <label htmlFor="email">Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={contactForm.email}
-                  onChange={handleContactChange}
-                  placeholder="you@example.com"
-                  required
-                />
+                  <label htmlFor="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={contactForm.email}
+                    onChange={handleContactChange}
+                    placeholder="you@example.com"
+                    required
+                  />
 
-                <label htmlFor="message">Message</label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={contactForm.message}
-                  onChange={handleContactChange}
-                  rows="5"
-                  placeholder="Write your requirement"
-                  required
-                />
+                  <label htmlFor="message">Message</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={contactForm.message}
+                    onChange={handleContactChange}
+                    rows="5"
+                    placeholder="Write your requirement"
+                    required
+                  />
 
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="btn-primary hover-loop"
-                  disabled={contactStatus.sending}
-                >
-                  {contactStatus.sending ? (
-                    <ScrambleText text="Opening Mail App..." />
-                  ) : (
-                    <ScrambleText text="Send Message" />
-                  )}
-                </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    className="btn-primary hover-loop"
+                    disabled={contactStatus.sending}
+                  >
+                    {contactStatus.sending ? (
+                      <ScrambleText text="Opening Mail App..." />
+                    ) : (
+                      <ScrambleText text="Send Message" />
+                    )}
+                  </motion.button>
 
-                {contactStatus.message ? (
-                  <p className={`form-message ${contactStatus.type}`}>{contactStatus.message}</p>
-                ) : null}
-              </motion.form>
+                  {contactStatus.message ? (
+                    <p className={`form-message ${contactStatus.type}`}>{contactStatus.message}</p>
+                  ) : null}
+                </motion.form>
+              </div>
             </div>
-          </div>
+          </LazySectionContent>
         </section>
       </main>
 

@@ -572,6 +572,50 @@ main,
   z-index: 1;
 }
 
+.lazy-section-shell {
+  position: relative;
+}
+
+.lazy-section-content {
+  will-change: opacity, transform, filter;
+}
+
+.lazy-section-placeholder {
+  width: min(1140px, 92%);
+  margin: 0 auto;
+  border-radius: 20px;
+  border: 1px solid var(--glass-stroke);
+  background:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--card-bg) 86%, transparent) 20%,
+      color-mix(in srgb, var(--glass-highlight) 34%, transparent) 45%,
+      color-mix(in srgb, var(--card-bg) 86%, transparent) 72%
+    ),
+    color-mix(in srgb, var(--card-bg) 90%, transparent);
+  background-size: 200% 100%;
+  animation: lazyShimmer 1.7s linear infinite;
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px;
+}
+
+.lazy-placeholder-line {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+.lazy-placeholder-line.short {
+  width: min(240px, 58%);
+}
+
 .hero-section {
   padding: 74px 0 42px;
   overflow: hidden;
@@ -1122,6 +1166,16 @@ main,
 
   50% {
     transform: translateY(14px) scale(1.04);
+  }
+}
+
+@keyframes lazyShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
   }
 }
 
